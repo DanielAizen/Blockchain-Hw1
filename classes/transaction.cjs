@@ -1,15 +1,21 @@
+// Libraries:
+const EC = require('elliptic').ec
+const sha256 = require("crypto-js/sha256.js")
+const ec = new EC('secp256k1')
 
-export default class Transaction {
+class Transaction {
     /**
      * @param {string} fromAddress
      * @param {string} toAddress
      * @param {number} amount
      */
-    constructor(fromAddress, toAddress, amount) {
+    constructor(fromAddress, toAddress, amount, timestamp, signature, tip) {
       this.fromAddress = fromAddress;
       this.toAddress = toAddress;
       this.amount = amount;
-      this.timestamp = Date.now();
+      this.timestamp = timestamp ? timestamp : Date.now();
+      this.signature = signature;
+      this.tip = tip;
     }
   
     /**
@@ -18,7 +24,7 @@ export default class Transaction {
      * @returns {string}
      */
     calculateHash() {
-      return crypto.createHash('sha256').update(this.fromAddress + this.toAddress + this.amount + this.timestamp).digest('hex');
+      return sha256(this.fromAddress + this.toAddress + this.amount + this.timestamp).toString();
     }
   
     /**
@@ -34,14 +40,11 @@ export default class Transaction {
       if (signingKey.getPublic('hex') !== this.fromAddress) {
         throw new Error('You cannot sign transactions for other wallets!');
       }
-      
-  
       // Calculate the hash of this transaction, sign it with the key
       // and store it inside the transaction obect
       const hashTx = this.calculateHash();
-      const sig = signingKey.sign(hashTx, 'base64');
-  
-      this.signature = sig.toDER('hex');
+      const _signature = signingKey.sign(hashTx);
+      this.signature = _signature.toDER('hex');
     }
   
     /**
@@ -50,7 +53,7 @@ export default class Transaction {
      *
      * @returns {boolean}
      */
-    isValid() {
+    isValid(pub_key) {
       // If the transaction doesn't have a from address we assume it's a
       // mining reward and that it's valid. You could verify this in a
       // different way (special field for instance)
@@ -59,8 +62,12 @@ export default class Transaction {
       if (!this.signature || this.signature.length === 0) {
         throw new Error('No signature in this transaction');
       }
-  
-      const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
-      return publicKey.verify(this.calculateHash(), this.signature);
+      var key = ec.keyFromPublic(pub_key, 'hex');
+      if (key.verify(this.calculateHash(), this.signature)){
+        console.log(`signature ${this.signature} `)
+        return true
+      }
+      return false;
     }
   }
+  module.exports.Transaction = Transaction

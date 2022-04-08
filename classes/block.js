@@ -4,7 +4,7 @@ import { MerkleTree } from "merkletreejs";
 import sha256  from "crypto-js/sha256.js";
 
 //classes
-import Transaction from "./transaction.js";
+import { Transaction } from "./transaction.cjs";
 
 //utils
 
@@ -22,6 +22,7 @@ export default class Block {
       this.transactions = transactions;
       this.nonce = 0;
       this.hash = this.calculateHash();
+      this.merTree = new MerkleTree(this.transactions.map(tran => tran.calculateHash(), sha256))
     }
   
     /**
@@ -45,8 +46,9 @@ export default class Block {
         this.nonce++;
         this.hash = this.calculateHash();
       }
-  
-      debug(`Block mined: ${this.hash}`);
+      console.log("*".repeat(100));
+      console.log(`Block mined: ${this.hash}`);
+      console.log("*".repeat(100));
     }
   
     /**
@@ -61,7 +63,6 @@ export default class Block {
           return false;
         }
       }
-  
       return true;
     }
   }

@@ -2,7 +2,7 @@
 
 //classes
 import Block from "./block.js";
-import Transaction from "./transaction.js";
+import { Transaction } from "./transaction.cjs";
 
 //utils
 
@@ -13,7 +13,7 @@ export default class Blockchain {
       this.chain = [this.createGenesisBlock()];
       this.difficulty = 2;
       this.pendingTransactions = [];
-      this.miningReward = 100;
+      this.miningReward = 20;
     }
   
     /**
@@ -41,14 +41,22 @@ export default class Blockchain {
      * @param {string} miningRewardAddress
      */
     minePendingTransactions(miningRewardAddress) {
-      const rewardTx = new Transaction(null, miningRewardAddress, this.miningReward);
+      const total_tips = this.getSumOfTips(this.pendingTransactions);
+      console.log('#'.repeat(100));
+      console.log(`Tips total amount is: ${total_tips}`);
+      
+      const rewardTx = new Transaction(null, miningRewardAddress + total_tips, this.miningReward, undefined, undefined, 0);
       this.pendingTransactions.push(rewardTx);
-  
-      const block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
+      
+      let block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
       block.mineBlock(this.difficulty);
-  
-      debug('Block successfully mined!');
+      
+      console.log("*".repeat(100));
+      console.log('Block successfully mined!');
+      console.log("*".repeat(100));
+      
       this.chain.push(block);
+      console.log('#'.repeat(100));
   
       this.pendingTransactions = [];
     }
@@ -64,9 +72,9 @@ export default class Blockchain {
       if (!transaction.fromAddress || !transaction.toAddress) {
         throw new Error('Transaction must include from and to address');
       }
-  
+
       // Verify the transactiion
-      if (!transaction.isValid()) {
+      if (!transaction.isValid(transaction.fromAddress)) {
         throw new Error('Cannot add invalid transaction to chain');
       }
       
@@ -75,32 +83,14 @@ export default class Blockchain {
       }
       
       // Making sure that the amount sent is not greater than existing balance
-      const walletBalance = this.getBalanceOfAddress(transaction.fromAddress);
-      if (walletBalance < transaction.amount) {
-        throw new Error('Not enough balance');
+      if (this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
+        throw new Error("Not enough balance");
       }
-  
-      // Get all other pending transactions for the "from" wallet
-      const pendingTxForWallet = this.pendingTransactions
-        .filter(tx => tx.fromAddress === transaction.fromAddress);
-  
-      // If the wallet has more pending transactions, calculate the total amount
-      // of spend coins so far. If this exceeds the balance, we refuse to add this
-      // transaction.
-      if (pendingTxForWallet.length > 0) {
-        const totalPendingAmount = pendingTxForWallet
-          .map(tx => tx.amount)
-          .reduce((prev, curr) => prev + curr);
-  
-        const totalAmount = totalPendingAmount + transaction.amount;
-        if (totalAmount > walletBalance) {
-          throw new Error('Pending transactions for this wallet is higher than its balance.');
-        }
-      }
-                                      
-  
+
       this.pendingTransactions.push(transaction);
-      debug('transaction added: %s', transaction);
+      console.log("*".repeat(100));
+      console.log(`Pending transaction has been added: ${transaction.calculateHash()}`);
+      console.log("*".repeat(100));
     }
   
     /**
@@ -110,21 +100,27 @@ export default class Blockchain {
      * @returns {number} The balance of the wallet
      */
     getBalanceOfAddress(address) {
-      let balance = 0;
+      let balance = 100;
   
       for (const block of this.chain) {
         for (const trans of block.transactions) {
           if (trans.fromAddress === address) {
-            balance -= trans.amount;
+            console.log('#'.repeat(100));
+            console.log(`The balance is ${balance} \nThe transaction amount is ${trans.amount} \nThe total tips ${parseInt(trans.tip)} \nCurrent burn is ${this.chain.indexOf(block)}`);
+            balance -= parseInt(trans.amount) + parseInt(trans.tip) + this.chain.indexOf(block);    
+            console.log('*'.repeat(30));
+            console.log('New balace after updating: ', balance);
+            console.log('*'.repeat(30));
+            
           }
-  
           if (trans.toAddress === address) {
-            balance += trans.amount;
+            balance += parseInt(trans.amount);
           }
         }
       }
   
-      debug('getBalanceOfAdrees: %s', balance);
+      console.log('The new total balance is: ', balance);
+      console.log('#'.repeat(100));
       return balance;
     }
   
@@ -145,8 +141,9 @@ export default class Blockchain {
           }
         }
       }
-  
-      debug('get transactions for wallet count: %s', txs.length);
+      console.log("*".repeat(100));
+      console.log(`get transactions for wallet count: ${txs.length}`);
+      console.log("*".repeat(100));
       return txs;
     }
   
@@ -165,7 +162,6 @@ export default class Blockchain {
       if (realGenesis !== JSON.stringify(this.chain[0])) {
         return false;
       }
-  
       // Check the remaining blocks on the chain to see if there hashes and
       // signatures are correct
       for (let i = 1; i < this.chain.length; i++) {
@@ -184,7 +180,62 @@ export default class Blockchain {
           return false;
         }
       }
-  
       return true;
+    }
+
+    getSumOfTips(transactions){
+      let curr_sum = 0;
+      for (const t in transactions) curr_sum += parseInt(t.tip);
+      return curr_sum;
+    }
+
+    verifyTransactionExist(hash) {
+      for (const b of this.chain) {
+        const proof = b.merTree.getProof(hash);
+        if (b.merTree.verify(proof, hash, b.merTree.getHexRoot())) return true;
+      }
+      return false;
+    }
+  
+    getTotalMinedCoins() {
+      let sum = 0;
+      console.log('#'.repeat(100));
+      for (const b of this.chain) {
+        for (const t of b.transactions) {
+          console.log("*".repeat(100));
+          console.log(`Amount mined is: ${Number(ts.amount)}\n The tip is: ${t.tip}`)
+          console.log("*".repeat(100));
+          sum += Number(t.amount);
+        }
+      }
+      console.log('#'.repeat(100));
+      return sum;
+    }
+
+    getNetworkCoins() {
+      let sum = 0;
+      let users = new Set();
+      for (const b of this.chain) {
+        for (const t of b.transactions) {
+          users.add(t.fromAddress)
+          users.add(t.toAddress)
+        }
+        sum += this.miningReward
+      }
+      sum -= this.miningReward // remove 1 reward for genesis block
+      sum -= this.getTotalBurnedCoins()
+      users.delete(null)
+      
+      sum += users.size * 100 //users amount * starting balance for each user
+  
+      return sum;
+    }
+  
+    getTotalBurnedCoins() {
+      let sum = 0;
+      for (const b of this.chain) {
+        sum += this.chain.indexOf(b) * 3
+      }
+      return sum;
     }
 }
