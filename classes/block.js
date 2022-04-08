@@ -1,8 +1,6 @@
 //libraries
-import * as crypto from "crypto";
 import { MerkleTree } from "merkletreejs";
 import sha256  from "crypto-js/sha256.js";
-
 //classes
 import { Transaction } from "./transaction.cjs";
 
@@ -32,9 +30,8 @@ export default class Block {
      * @returns {string}
      */
     calculateHash() {
-      return crypto.createHash('sha256').update(this.previousHash + this.timestamp + JSON.stringify(this.transactions) + this.nonce).digest('hex');
+      return sha256(this.previousHash + this.timestamp + JSON.stringify(this.transactions) + this.nonce).toString();
     }
-  
     /**
      * Starts the mining process on the block. It changes the 'nonce' until the hash
      * of the block starts with enough zeros (= difficulty)
@@ -46,9 +43,7 @@ export default class Block {
         this.nonce++;
         this.hash = this.calculateHash();
       }
-      console.log("*".repeat(100));
       console.log(`Block mined: ${this.hash}`);
-      console.log("*".repeat(100));
     }
   
     /**

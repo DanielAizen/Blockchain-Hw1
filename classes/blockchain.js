@@ -11,7 +11,7 @@ import { Transaction } from "./transaction.cjs";
 export default class Blockchain {
     constructor() {
       this.chain = [this.createGenesisBlock()];
-      this.difficulty = 2;
+      this.difficulty = 3;
       this.pendingTransactions = [];
       this.miningReward = 20;
     }
@@ -42,22 +42,17 @@ export default class Blockchain {
      */
     minePendingTransactions(miningRewardAddress) {
       const total_tips = this.getSumOfTips(this.pendingTransactions);
-      console.log('#'.repeat(100));
       console.log(`Tips total amount is: ${total_tips}`);
       
-      const rewardTx = new Transaction(null, miningRewardAddress + total_tips, this.miningReward, undefined, undefined, 0);
+      const rewardTx = new Transaction(null, miningRewardAddress , this.miningReward + total_tips, undefined, undefined, 0);
       this.pendingTransactions.push(rewardTx);
       
       let block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
       block.mineBlock(this.difficulty);
       
-      console.log("*".repeat(100));
       console.log('Block successfully mined!');
-      console.log("*".repeat(100));
-      
-      this.chain.push(block);
-      console.log('#'.repeat(100));
-  
+
+      this.chain.push(block);  
       this.pendingTransactions = [];
     }
   
@@ -88,9 +83,7 @@ export default class Blockchain {
       }
 
       this.pendingTransactions.push(transaction);
-      console.log("*".repeat(100));
       console.log(`Pending transaction has been added: ${transaction.calculateHash()}`);
-      console.log("*".repeat(100));
     }
   
     /**
@@ -105,22 +98,18 @@ export default class Blockchain {
       for (const block of this.chain) {
         for (const trans of block.transactions) {
           if (trans.fromAddress === address) {
-            console.log('#'.repeat(100));
-            console.log(`The balance is ${balance} \nThe transaction amount is ${trans.amount} \nThe total tips ${parseInt(trans.tip)} \nCurrent burn is ${this.chain.indexOf(block)}`);
-            balance -= parseInt(trans.amount) + parseInt(trans.tip) + this.chain.indexOf(block);    
-            console.log('*'.repeat(30));
+            console.log(`The balance is ${balance} \nThe transaction amount is ${trans.amount} \tThe total tips ${trans.tip} \tCurrent burn is ${this.chain.indexOf(block)}`);
+            balance -= Number(trans.amount) + Number(trans.tip) + this.chain.indexOf(block);    
             console.log('New balace after updating: ', balance);
-            console.log('*'.repeat(30));
-            
           }
           if (trans.toAddress === address) {
-            balance += parseInt(trans.amount);
+            balance += Number(trans.amount);
           }
         }
       }
-  
+      console.log("#".repeat(15));
       console.log('The new total balance is: ', balance);
-      console.log('#'.repeat(100));
+      console.log("#".repeat(15));
       return balance;
     }
   
@@ -141,9 +130,7 @@ export default class Blockchain {
           }
         }
       }
-      console.log("*".repeat(100));
       console.log(`get transactions for wallet count: ${txs.length}`);
-      console.log("*".repeat(100));
       return txs;
     }
   
@@ -185,7 +172,9 @@ export default class Blockchain {
 
     getSumOfTips(transactions){
       let curr_sum = 0;
-      for (const t in transactions) curr_sum += parseInt(t.tip);
+      for (const t in transactions){
+         curr_sum += Number(t.tip);
+      }
       return curr_sum;
     }
 
@@ -199,16 +188,12 @@ export default class Blockchain {
   
     getTotalMinedCoins() {
       let sum = 0;
-      console.log('#'.repeat(100));
       for (const b of this.chain) {
         for (const t of b.transactions) {
-          console.log("*".repeat(100));
-          console.log(`Amount mined is: ${Number(ts.amount)}\n The tip is: ${t.tip}`)
-          console.log("*".repeat(100));
+          console.log(`Amount mined is: ${Number(t.amount)}\n The tip is: ${t.tip}`)
           sum += Number(t.amount);
         }
       }
-      console.log('#'.repeat(100));
       return sum;
     }
 

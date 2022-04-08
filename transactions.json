@@ -3,7 +3,8 @@
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "5"
+            "amount": "5",
+            "tip": "1"
         },
         {
             "fromAddress": "bob",
@@ -35,35 +36,22 @@
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "3",
-            "tip": "1"
-        },
-        {
-            "fromAddress": "bob",
-            "toAddress": "alice",
-            "amount": "3"
-        },
-        {
-            "fromAddress": "alice",
-            "toAddress": "bob",
             "amount": "3"
         },
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "2",
-            "tip": "1"
+            "amount": "2"
         },
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "1",
-            "tip": "1"
-        },
-        {
-            "fromAddress": "bob",
-            "toAddress": "alice",
             "amount": "4"
+        },
+        {
+            "fromAddress": "bob",
+            "toAddress": "alice",
+            "amount": "2"
         },
         {
             "fromAddress": "alice",
@@ -73,18 +61,17 @@
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "4"
+            "amount": "2"
         },
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "2",
-            "tip": "1"
+            "amount": "3"
         },
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "3"
+            "amount": "4"
         },
         {
             "fromAddress": "alice",
@@ -94,7 +81,17 @@
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "4"
+            "amount": "3"
+        },
+        {
+            "fromAddress": "alice",
+            "toAddress": "bob",
+            "amount": "1"
+        },
+        {
+            "fromAddress": "bob",
+            "toAddress": "alice",
+            "amount": "5"
         },
         {
             "fromAddress": "alice",
@@ -119,12 +116,12 @@
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "13"
+            "amount": "3"
         },
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "9"
+            "amount": "2"
         },
         {
             "fromAddress": "alice",
@@ -134,14 +131,12 @@
         {
             "fromAddress": "bob",
             "toAddress": "alice",
-            "amount": "5",
-            "tip": "1"
+            "amount": "5"
         },
         {
             "fromAddress": "alice",
             "toAddress": "bob",
-            "amount": "3",
-            "tip": "1"
+            "amount": "3"
         },
         {
             "fromAddress": "bob",
