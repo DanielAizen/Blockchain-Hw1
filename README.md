@@ -33,10 +33,10 @@ cd p2p
 
 then run the following commands to start the wallets:
 - ```
-  node wallet.js bob 4002 4001 4003
+  node walletSPV.js bob 4002 4001 4003
   ```
 - ```
-  node wallet.js alice 4003 4001 4002
+  node walletSPV.js alice 4003 4001 4002
   ```
 
 ## Models 
@@ -89,88 +89,91 @@ Each transaction hold the address of the sender and reciever, the amount that is
 
 ### Fullnodes:
 ```JavaScript
-var t = topology(myIp, peerIps).on("connection", (socket, peerIp) => { // initiate a connection with peers list when  
-  const peerPort = extractPortFromIp(peerIp);                          // someone connected.
-  log("connected to peer - ", peerPort); 
-
-  socket.on("data", (data) => { // Listens to data that goes through the network.
-    if (data.includes("fromAddress")) { // check if data is a transaction.
-      var tempTx = JSON.parse(data.toString()); // parse data.
-      const newTransaction = new Transaction( // create a transaction from recieved data.
-        tempTx.fromAddress,
-        tempTx.toAddress,
-        tempTx.amount,
-        tempTx.signature,
-        tempTx.timestamp,
-        tempTx.tip
-      );
-      newCoin.addTransaction(newTransaction) // validate transaction signature, sender balance and add it to chain if valid.
-      if (newCoin.pendingTransactions.length === 3) { // check if chain is ready to mine block.
-        newCoin.minePendingTransaction(pubK); // mine block. 
-      }
-    }
-
-        if (data.includes("balance") && newCoin.pendingTransactions.length === 0) { // check if data is balance request.
-      log("pending : ", newCoin.pendingTransactions)                                // print all kind of balances.
-      log("bob has ", newCoin.getBalanceOfAddress(pkMap.get('bob')))
-      log("alice has ", newCoin.getBalanceOfAddress(pkMap.get('alice')))
-      log("miner has ", newCoin.getBalanceOfAddress(pubK))
-      log("Total mined coins: ", newCoin.getTotalMinedCoins())
-      log("Total burned coins: ", newCoin.getTotalBurnedCoins())
-      log("Total coins in network: ", newCoin.getCoinsInNetwork())
-      exit(0)
-    }
-    if (data.includes("check")){ // check if data is check request.
-      var hashToCheck = String(data).split(' ')
-      var flag = newCoin.isTransactionExist(hashToCheck[1]) // validate transaction in block using merkle tree.
-      socket.write(`isTransactionExist result with the hash: ${hashToCheck[1]} is ${flag}` ) // send back result.
-
-    }
-  });
+var topology_init = topology(self_ip, peer_ip_list).on("connection", (socket, peerIp) => {
+    const peerPort = extractPortFromIp(peerIp);
+    console.log('connected to peer - ', peerPort);
+    sockets[peerPort] = socket;
+    
+    socket.on("data", (data) => {
+        if (data.includes("fromAddress")) {
+            var pendingTx = JSON.parse(data.toString());
+            const newTransaction = new Transaction(
+                pendingTx.fromAddress,
+                pendingTx.toAddress,
+                pendingTx.amount,
+                pendingTx.timestamp,
+                pendingTx.signature,
+                pendingTx.tip
+            );
+            console.log(newTransaction);
+            blockchain.addTransaction(newTransaction)
+            if (blockchain.pendingTransactions.length === 3) {
+                blockchain.minePendingTransactions(pubKey);
+            }
+        }
+        if (data.includes("balance") && blockchain.pendingTransactions.length === 0) {
+            console.log("pending : ", blockchain.pendingTransactions);
+            console.log("bob has ", blockchain.getBalanceOfAddress(pub_key_map.get('bob')));
+            console.log("alice has ", blockchain.getBalanceOfAddress(pub_key_map.get('alice')));
+            console.log("miner has ", blockchain.getBalanceOfAddress(pubKey));
+            console.log("Total mined coins: ", blockchain.getTotalMinedCoins());
+            console.log("Total burned coins: ", blockchain.getTotalBurnedCoins());
+            console.log("Total coins in network: ", blockchain.getNetworkCoins());
+            exit(0);
+        }
+        if (data.includes("check")){ // check if data is check request.
+            var checkHash = String(data).split(' ')
+            var flag = blockchain.verifyTransactionExist(checkHash[1]) // validate transaction in block using merkle tree.
+            socket.write(`isTransactionExist result with the hash: ${checkHash[1]} is ${flag}` ) // send back result.
+        }
+    });
 });
 ```
 
 ### Wallet
 
 ```JavaScript
-var t = topology(myIp, peerIps).on("connection", (socket, peerIp) => {
+var topology_init = topology(myIp, peerIps).on('connection', (socket, peerIp) => {
     const peerPort = extractPortFromIp(peerIp);
-    log("connected to peer - ", peerPort);
-    var hashToCheck;
-    const sendSingleTransaction = (socket) => {
-        if (transactions.transactions[index] !== undefined) { // make sure file is not empty
-            if (transactions.transactions[index].fromAddress === name) { // make sure to send only self transactions
-                let key = ec.keyFromPrivate(prMap.get(name), "hex");
-                const tx = new Transaction( // creates new transaction object
-                    pkMap.get(name),
-                    pkMap.get(name === "alice" ? "bob" : "alice"),
-                    transactions.transactions[index].amount,
+    log('connected to peer - ', peerPort);
+
+    const handleSingleTransaction = (socket) => {
+        if (json_trans.transactions[idx] !== undefined) {
+            if (json_trans.transactions[idx].fromAddress === name) {
+                let privateKey = ec.keyFromPrivate(pri_key_map.get(name), "hex");
+                const tx = new Transaction(
+                    pub_key_map.get(name),
+                    pub_key_map.get(name === "alice" ? "bob" : "alice"),
+                    json_trans.transactions[idx].amount,
                     undefined,
                     undefined,
-                    transactions.transactions[index].tip ? 1 : 0
+                    json_trans.transactions[idx].tip !== undefined ? 1 : 0
                 );
-                tx.signTransaction(key);
-                var buf = Buffer.from(JSON.stringify(tx));
+                tx.signTransaction(privateKey);
+                let buf = Buffer.from(JSON.stringify(tx))
                 console.log(tx);
-                hashToCheck = tx.calculateHash(); // collecting hash for future check.
-                socket.write(buf); // sending signed transaction.
+                checkHash = tx.calculateHash();
+                socket.write(buf);
             }
-            index++;
+            idx++;
             
-        } else { // finsh sending transactions
-            if (name === "bob") { // only bob send
-                setTimeout(() => socket.write(`check ${hashToCheck}`), 3000) 
+        } else {
+            if (name === "bob") {
+                setTimeout(() => socket.write(`check ${checkHash}`), 3000)
                 setTimeout(() => socket.write("balance"), 6000)
             }
         }
     };
-    if ((name === "bob") && first) {  // setting timout for bob to handle send time
-        setTimeout(() => setInterval(() => sendSingleTransaction(socket), 3000), 12200);
-        first = false;
-    } else
-        setInterval(() => sendSingleTransaction(socket), 3000);
 
-    socket.on('data', data => log(data.toString('utf8'))) // print data received
+    sockets[peerPort] = socket;
+
+    if ((name === "bob") && first_sender) {
+        setTimeout(() => setInterval(() => handleSingleTransaction(socket), 3000), 12500);
+        first_sender = false;
+    } else {
+        setInterval(() => handleSingleTransaction(socket), 3000);
+    }
+    socket.on('data', data => log(data.toString('utf8')));
 });
 ```
 
@@ -185,24 +188,21 @@ transaction is properly signed.
 - **Mine Pending Blocks (BlockChain)**
 
 ```JavaScript
-    minePendingTransaction(miningRewardAddress) {
-    const totalTips = this.sumAllTips(this.pendingTransactions);
-    const rewardTx = new Transaction( // create a new reward transaction with reward and tip.
-      null,
-      miningRewardAddress,
-      this.miningReward + totalTips, undefined, undefined, 0
-    );
-    this.pendingTransactions.push(rewardTx); // add reward transaction to pending list.
-    let block = new Block(
-      Date.now(),
-      this.pendingTransactions,
-      this.getLatestBlock().hash
-    );
-    block.mineBlock(this.difficulty);  // mine the prepeard block with chain difficulty.
-    console.log("block successfully mined");
-    this.chain.push(block);
-    this.pendingTransactions = []; //clear pending transaction list.
-  }
+    minePendingTransactions(miningRewardAddress) {
+      const total_tips = this.getSumOfTips(this.pendingTransactions);
+      console.log(`Tips total amount is: ${total_tips}`);
+      
+      const rewardTx = new Transaction(null, miningRewardAddress , this.miningReward + total_tips, undefined, undefined, 0);
+      this.pendingTransactions.push(rewardTx);
+      
+      let block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
+      block.mineBlock(this.difficulty);
+      
+      console.log('Block successfully mined!');
+
+      this.chain.push(block);  
+      this.pendingTransactions = [];
+    }
 ```
 
 Takes all the pending transactions, puts them in a Block and starts the
@@ -246,37 +246,40 @@ transaction is properly signed.
 
 ```JavaScript
 getBalanceOfAddress(address) {
-    let balance = 100; //every wallet starts with 100 coins
-    for (const block of this.chain) {
-      for (const trans of block.transactions) {
-        if (trans.fromAddress === address) {   // checks for every transaction in chain.
-          balance -= Number(trans.amount) + trans.tip + this.chain.indexOf(block); //reduce amount sent include tip and burn.
-          console.log("new balance is after reduction", balance);
-        }
-        if (trans.toAddress === address) {
-          balance += Number(trans.amount); // add the amount sent from others.
+      let balance = 100;
+      
+      for (const block of this.chain) {
+        for (const trans of block.transactions) {
+          if (trans.fromAddress === address) {
+            console.log(`The balance is ${balance} \nThe transaction amount is ${trans.amount} \tThe total tips ${trans.tip} \tCurrent burn is ${this.chain.indexOf(block)}`);
+            balance -= Number(trans.amount) + trans.tip + this.chain.indexOf(block);    
+            console.log('New balace after updating: ', balance);
+          }
+          if (trans.toAddress === address) {
+            balance += Number(trans.amount);
+          }
         }
       }
+      console.log("#".repeat(15));
+      console.log('The new total balance is: ', balance);
+      console.log("#".repeat(15));
+      return balance;
     }
-    console.log("total balance is after ", balance);
-    return balance;
-  }
 ```
 
 - **Get Total Mined Coins (BlockChain)**
 
 ```JavaScript
   getTotalMinedCoins() {
-    var sum = 0;
-    for (const block of this.chain) {
-      for (const trans of block.transactions) {
-        console.log(`amount is : ${Number(trans.amount)} , tip is : ${trans.tip}`)
-        sum += Number(trans.amount);
+      var sum = 0;
+      for (const b of this.chain) {
+        for (const t of b.transactions) {
+          console.log(`Amount mined is: ${Number(t.amount)}, the tip is: ${t.tip}`)
+          sum += Number(t.amount);
+        }
       }
+      return sum;
     }
-    return sum;
-  }
-
 ```
 Return the sum of all transactions amount and tip in chain.
 
