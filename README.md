@@ -44,12 +44,13 @@ then run the following commands to start the wallets:
 
 ```JavaScript
 class Blockchain {
-  constructor() {
-    this.chain = [this.createGenesisBlock()];
-    this.difficulty = 3;
-    this.pendingTransactions = [];
-    this.miningReward = 10;
-  }
+    constructor() {
+        this.chain = [this.createGenesisBlock()];
+        this.difficulty = 3;
+        this.pendingTransactions = [];
+        this.miningReward = 20;
+    }
+}
 ```
 Defines a BlockChain with list of blocks (starting with the genesis block), pre-defined mine difficulty, an empty list for pending transactions and the mining reward.
 
@@ -59,12 +60,12 @@ Defines a BlockChain with list of blocks (starting with the genesis block), pre-
 ```JavaScript
 class Block {
     constructor(timestamp, transactions, previousHash = '') {
-        this.previousHash = previousHash;
-        this.timestamp = timestamp;
-        this.transactions = transactions;
-        this.nonce = 0;
-        this.tree = new MerkleTree(this.transactions.map(tran => tran.calculateHash(), sha256))
-        this.hash = this.calculateHash();
+      this.previousHash = previousHash;
+      this.timestamp = timestamp;
+      this.transactions = transactions;
+      this.nonce = 0;
+      this.hash = this.calculateHash();
+      this.merTree = new MerkleTree(this.transactions.map(t => t.calculateHash()), sha256)
     }
 ```
 Each Block contains the hash of the previous block, timestamp, nonce, transactions, **a MerkleTree that holds the transactions headers for future improved accessing for finding an existing transaction.**
@@ -74,12 +75,12 @@ Each Block contains the hash of the previous block, timestamp, nonce, transactio
 
 ```JavaScript
  class Transaction {
-    constructor(fromAddress, toAddress, amount, signature, timestamp, tip) {
+    constructor(fromAddress, toAddress, amount, timestamp, signature, tip) {
       this.fromAddress = fromAddress;
       this.toAddress = toAddress;
       this.amount = amount;
+      this.timestamp = timestamp ? timestamp : Date.now();
       this.signature = signature;
-      this.timestamp = timestamp?timestamp:Date.now();
       this.tip = tip;
     }
 ```
