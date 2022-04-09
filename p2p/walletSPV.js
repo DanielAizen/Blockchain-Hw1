@@ -53,7 +53,7 @@ var topology_init = topology(myIp, peerIps).on('connection', (socket, peerIp) =>
                     json_trans.transactions[idx].amount,
                     undefined,
                     undefined,
-                    json_trans.transactions[idx].tip ? 1 : 0
+                    json_trans.transactions[idx].tip !== undefined ? 1 : 0
                 );
                 tx.signTransaction(privateKey);
                 let buf = Buffer.from(JSON.stringify(tx))
@@ -74,7 +74,7 @@ var topology_init = topology(myIp, peerIps).on('connection', (socket, peerIp) =>
     sockets[peerPort] = socket;
 
     if ((name === "bob") && first_sender) {
-        setTimeout(() => setInterval(() => handleSingleTransaction(socket), 3000), 15000);
+        setTimeout(() => setInterval(() => handleSingleTransaction(socket), 3000), 12500);
         first_sender = false;
     } else {
         setInterval(() => handleSingleTransaction(socket), 3000);

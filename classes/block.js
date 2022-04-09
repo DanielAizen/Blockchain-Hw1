@@ -20,7 +20,7 @@ export default class Block {
       this.transactions = transactions;
       this.nonce = 0;
       this.hash = this.calculateHash();
-      this.merTree = new MerkleTree(this.transactions.map(tran => tran.calculateHash(), sha256))
+      this.merTree = new MerkleTree(this.transactions.map(t => t.calculateHash()), sha256)
     }
   
     /**
