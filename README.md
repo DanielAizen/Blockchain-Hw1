@@ -22,7 +22,7 @@ npm install
 On root folder using the following command start the miner:
 
 - ```
-      node fullnodes.js 4001 4002 4003
+      node fullNodes.js 4001 4002 4003
   ```
   
 On the other 2 terminal switch to the "p2p" folder:

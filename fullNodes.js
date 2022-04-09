@@ -96,7 +96,7 @@ var topology_init = topology(self_ip, peer_ip_list).on("connection", (socket, pe
         if (data.includes("check")){ // check if data is check request.
             var checkHash = String(data).split(' ')
             var flag = blockchain.verifyTransactionExist(checkHash[1]) // validate transaction in block using merkle tree.
-            socket.write(`isTransactionExist result with the hash: ${checkHash[1]} is ${flag}` ) // send back result.
+            socket.write(`verifyTransactionExist result with the hash: ${checkHash[1]} is ${flag}` ) // send back result.
         }
     });
 });
